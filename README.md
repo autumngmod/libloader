@@ -6,7 +6,10 @@ All packages are searched on GitHub, in open source repositories.
 ![showcase](./assets/showcase.png)
 
 # Installation
-Download [latest release](https://github.com/autumngmod/libloader/releases/download/latest/libloader.lua), and put it to ``GarrymodDS/garrysmod/lua/autorun/``
+Download [latest release](https://github.com/autumngmod/libloader/releases/download/latest/libloader.lua), and put it to ``GarrymodDS/garrysmod/lua/autorun/`` (its minified version of ``libloader``)
+
+> [!NOTE]
+> Alternatively, you can just download this repository, and install libloader as an addon. This way you can make sure that the code is not modified and does not contain anything dangerous.
 
 # For developers
 Your repository should have an addon.json file in root directory, and its contents should match [this json schema](https://raw.githubusercontent.com/autumngmod/json/refs/heads/main/addon.scheme.json).
