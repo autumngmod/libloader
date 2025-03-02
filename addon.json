@@ -1,0 +1,9 @@
+{
+  "$schema": "https://raw.githubusercontent.com/autumngmod/json/refs/heads/main/addon.scheme.json",
+  "name": "libloader",
+  "description": "Package manager for Garry's Mod",
+  "authors": ["smokingplaya"],
+  "version": "0.1.0",
+  "githubRepo": "https://github.com/autumngmod/libloader",
+  "side": ["server", "client"]
+}
