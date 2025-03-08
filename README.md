@@ -4,6 +4,11 @@ All packages are searched on GitHub, in open source repositories.
 
 ![showcase](./assets/showcase.png)
 
+*join us on discord!*\
+<a href="https://discord.gg/HspPfVkHGh">
+  <img src="https://discordapp.com/api/guilds/1161025351099625625/widget.png?style=shield">
+</a>
+
 # Table of contents
 * [Official available libraries](#official-available-libraries)
 * [Installation](#installation)
