@@ -46,7 +46,7 @@ local function parseRepo(str)
 
   local splitted = (str or ""):Split("/");
 
-  if (#splitted != 2) then
+  if (#splitted ~= 2) then
     return libloader.log.err("the specified repository has an invalid format (org/repo@version?)")
   end
 
@@ -68,12 +68,12 @@ local actions = {
   install = function(args)
     local data = parseRepo(args.commands[1])
 
-    if (!data) then
+    if (not data) then
       return
     end
 
     coroutine.resume(coroutine.create(function()
-      libloader:download(data.repo, data.version || args.flags["version"])
+      libloader:download(data.repo, data.version or args.flags["version"])
     end))
   end,
 
@@ -81,13 +81,13 @@ local actions = {
   ---@param args CliArguments
   remove = function(args)
     local data = parseRepo(args.commands[1])
-    local version = (data or {}).version || args.flags["version"]
+    local version = (data or {}).version or args.flags["version"]
 
-    if (!data) then
+    if (not data) then
       return
     end
 
-    if (!version) then
+    if (not version) then
       return libloader.log.err("You must specify the version of the library!")
     end
 
@@ -101,13 +101,13 @@ local actions = {
   ---@param args CliArguments
   enable = function(args)
     local data = parseRepo(args.commands[1])
-    local version = (data or {}).version || args.flags["version"]
+    local version = (data or {}).version or args.flags["version"]
 
-    if (!data) then
+    if (not data) then
       return
     end
 
-    if (!version) then
+    if (not version) then
       return libloader.log.err("You must specify the version of the library!")
     end
 
@@ -119,13 +119,13 @@ local actions = {
   ---@param args CliArguments
   disable = function(args)
     local data = parseRepo(args.commands[1])
-    local version = (data or {}).version || args.flags["version"]
+    local version = (data or {}).version or args.flags["version"]
 
-    if (!data) then
+    if (not data) then
       return
     end
 
-    if (!version) then
+    if (not version) then
       return libloader.log.err("You must specify the version of the library!")
     end
 
@@ -145,6 +145,12 @@ local actions = {
       libloader.log.empty(("  • %s@%s (%s)"):format(record.repo, record.version, record.enabled == "1" and "enabled" or "disabled"))
       libloader.log.empty(("    %s"):format(libloader.fs:getLibPath(record.repo, record.version)))
     end
+  end,
+
+  unbusy = function()
+    libloader.log.warn("Use this only if you have caught a bug!")
+    libloader:setBusy(false)
+    libloader.log.log("Unbusied!")
   end
 }
 
@@ -154,23 +160,23 @@ actions["r"] = actions["remove"]
 actions["delete"] = actions["remove"]
 
 concommand.Add("lib", function(ply, _, args)
-  if (libloader:isBusy()) then
+  if (libloader:isBusy() and args[1] ~= "unbusy") then
     return
   end
 
-  if (SERVER && IsValid(ply) && !ply:IsSuperAdmin()) then
+  if (SERVER and IsValid(ply) and not ply:IsSuperAdmin()) then
     return ply:ChatPrint("you are not permitted to do that")
   end
 
   local commands = parseCli(args)
 
-  if (!commands) then
+  if (not commands) then
     return
   end
 
   local action = commands.commands[1];
 
-  if (!action) then
+  if (not action) then
     return libloader.log.err("argument #1 (command) is not specified")
   end
 
@@ -181,7 +187,7 @@ concommand.Add("lib", function(ply, _, args)
 
   local actionFunc = actions[action]
 
-  if (!actionFunc) then
+  if (not actionFunc) then
     return libloader.log.err("command not found")
   end
 

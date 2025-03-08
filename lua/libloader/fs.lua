@@ -13,6 +13,10 @@ function libloader.fs:getLibPath(repo, version)
   return "libloader/" .. org .. "/" .. repo .. "/v" .. version .. "/lib.txt"
 end
 
+function libloader.fs:read(repo, version)
+  return file.Read(self:getLibPath(repo, version), "DATA")
+end
+
 function libloader.fs:write(repo, version, content)
   local path = self:getLibPath(repo, version)
   local dir = path:GetPathFromFilename()

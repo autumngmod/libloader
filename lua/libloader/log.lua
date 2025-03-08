@@ -16,7 +16,7 @@ function libloader.log.empty(msg)
   MsgN()
 end
 
-if (!LIBLOADER_INITIALIZED) then
+if (not LIBLOADER_INITIALIZED) then
   LIBLOADER_INITIALIZED = true
   libloader.log.log(("Loading libLoader v%s by smokingplaya"):format(libloader.version))
 end

@@ -7,13 +7,13 @@
 ---@field githubRepo string
 ---@field dependencies? {string: string}
 
-libloader = libloader || {}
-libloader.version = "0.1.2"
+libloader = libloader or {}
+libloader.version = "0.1.3"
 libloader.showChecksums = true
 
 local showHints = CreateConVar("libloader_showhints", "1", nil, nil, 0, 1)
 
-if (!libloader.showChecksums) then
+if (not libloader.showChecksums) then
   libloader.log.warn("Attention! You have disabled printing of file checksums. It's not safe!")
 end
 
@@ -66,7 +66,7 @@ local function getLatestVersion(repo)
   local result;
 
   http.Fetch(url, function(b, _, _, c)
-    if (c != 200) then
+    if (c ~= 200) then
       resume(co)
 
       return libloader.log.err("Failed to fetch GitHub API")
@@ -75,7 +75,7 @@ local function getLatestVersion(repo)
     result = util.JSONToTable(b)
       .tag_name
 
-    libloader.log.log("Found the latest version of the library: " .. result)
+    libloader.log.log("Downloading the latest version: " .. result)
 
     resume(co)
   end, function(e)
@@ -117,21 +117,35 @@ end
 --- Downloads library from GitHub repository
 ---
 ---@param repo string
----@param version? string
-function libloader:download(repo, version)
+---@param argVersion? string
+function libloader:download(repo, argVersion)
   self:setBusy(true)
 
-  version = version and "v" .. version or getLatestVersion(repo)
+  local version = argVersion and "v" .. argVersion or getLatestVersion(repo)
 
-  if (!version) then
+  if (not version) then
     self:setBusy(false)
     return self.log.err("Failed to get latest release of " .. repo)
   end
 
+  // skip if downloaded
+  local vers = version:Replace("v", "")
+  local result = self.db:get(repo, vers)
+  local downloaded = istable(result) and result[1]
+
+  if (downloaded) then
+    if (downloaded.crc == util.CRC(self.fs:read(repo, vers))) then
+      self:setBusy(false)
+      return self.log.warn(("%s@%s is already installed"):format(repo, vers))
+    end
+  end
+
+  // downloading
+
   local baseCo = coroutine.running()
   local url = ("http://github.com/%s/releases/download/%s/addon.json"):format(repo, version)
 
-  if (!table.HasValue(trustedOrgs, repo:Split("/")[1])) then
+  if (not table.HasValue(trustedOrgs, repo:Split("/")[1])) then
     MsgC(greyColor, "We are not responsible for third-party libraries. Their use may lead to harmful consequences.")
     MsgN()
   end
@@ -186,7 +200,7 @@ function libloader:handleDownload(repo, body, co)
   self.log.log(("Trying to find GitHub release %s@%s"):format(repo, version))
 
   http.Fetch(url, function(content, _, _, c)
-    if (c != 200) then
+    if (c ~= 200) then
       return self.log.err(("Unable to get release for %s@%s (%s)"):format(repo, version, c))
     end
 
@@ -195,20 +209,22 @@ function libloader:handleDownload(repo, body, co)
     self.log.custom(Color(0, 255, 0), "[200 OK] ", libloader.log.greyColor, "Release found")
     self.log.log(("Saving library in data/%s"):format(base))
 
+    local crc = util.CRC(content)
+
     if (libloader.showChecksums) then
       self.log.log(("SHA256: %s, CRC32: %s"):format(
         util.SHA256(content),
-        util.CRC(content)
+        crc
       ))
     end
 
     self.fs:write(repo, version, content)
-    self.db:save(repo, body)
+    self.db:save(repo, body, crc)
 
     self.log.custom(Color(85, 255, 85), ("The %s@%s library has been installed"):format(repo, version))
 
     if (showHints:GetBool()) then
-      self.log.custom(self.log.orangeColor, "* Libraries are not enabled by default, use ", self.log.greyColor, "lib enable org/repo@version", self.log.orangeColor, " to enable.")
+      self.log.custom(self.log.orangeColor, "* Libraries are not enabled by default, use ", self.log.greyColor, ("lib enable %s@%s"):format(repo, body.version), self.log.orangeColor, " to enable.")
     end
 
     hook.Run("libInstalled", repo, version)
@@ -224,7 +240,7 @@ end
 function libloader:load(repo, version)
   local path = self.fs:getLibPath(repo, version)
 
-  if (!file.Exists(path, "DATA")) then
+  if (not file.Exists(path, "DATA")) then
     return self.log.err(("The lib.txt file for %s@%s was not found. Most likely you already deleted it."):format(repo, version))
   end
 
@@ -241,7 +257,7 @@ function libloader:loadLibraries()
   local libraries = self.db:getInstalled()
 
   for _, lib in ipairs(libraries) do
-    if (lib.enabled != "1") then
+    if (lib.enabled ~= "1") then
       continue
     end
 

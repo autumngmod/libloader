@@ -35,33 +35,35 @@ if (SERVER) then
     sendCachedLibraries(client)
   end)
 
-  return
-end
+  // if you put everything in one file, then return can break everything here.
+  -- return
+else
+  net.Receive("lib.load", function(len)
+    if (libloader:isBusy()) then
+      return -- idi nahui lol
+    end
 
-net.Receive("lib.load", function(len)
-  if (libloader:isBusy()) then
-    return -- idi nahui lol
-  end
+    local list = {}
+    local size = net.ReadUInt(16)
 
-  local list = {}
-  local size = net.ReadUInt(16)
+    for i=1, size do
+      //        org/repo            = version
+      list[i] = {[net.ReadString()] = net.ReadString()}
+    end
 
-  for i=1, size do
-    list[i] = {[net.ReadString()] = net.ReadString()}
-  end
+    local co = coroutine.create(function()
+      libloader:downloadMany(list, true)
+    end)
 
-  local co = coroutine.create(function()
-    libloader:downloadMany(list, true)
+    coroutine.resume(co)
   end)
 
-  coroutine.resume(co)
-end)
+  local function getLibraries()
+    net.Start("lib.load")
+    net.SendToServer()
+  end
 
-local function getLibraries()
-  net.Start("lib.load")
-  net.SendToServer()
+  net.Receive("lib.loadu", getLibraries)
+
+  timer.Simple(0, getLibraries)
 end
-
-net.Receive("lib.loadu", getLibraries)
-
-timer.Simple(0, getLibraries)
