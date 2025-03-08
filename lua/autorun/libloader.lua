@@ -109,7 +109,7 @@ function libloader:downloadMany(list, shouldEnable)
     self:download(repo, version)
 
     if (shouldEnable) then
-      self:load(repo, version)
+      self:enable(repo, version)
     end
   end
 end
@@ -235,6 +235,11 @@ function libloader:handleDownload(repo, body, co)
   end)
 
   coroutine.yield()
+end
+
+function libloader:enable(repo, version)
+  self.db:enable(repo, version)
+  self:load(repo, version)
 end
 
 function libloader:load(repo, version)

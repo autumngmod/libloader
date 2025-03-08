@@ -94,7 +94,7 @@ local actions = {
     libloader.db:remove(data.repo, version)
     libloader.fs:delete(data.repo, version)
 
-    libloader.log:log(("Library %s@%s has been deleted"):format(data.repo, version))
+    libloader.log.log(("Library %s@%s has been deleted"):format(data.repo, version))
   end,
 
   --- Library enabling
@@ -111,7 +111,6 @@ local actions = {
       return libloader.log.err("You must specify the version of the library!")
     end
 
-    libloader.db:enable(data.repo, version)
     libloader:load(data.repo, version)
   end,
 
