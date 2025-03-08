@@ -117,11 +117,11 @@ function libloader.db:enable(repo, version)
 
       local record = self:get(depRepo, depVersion)
 
-      if (!record) then
+      if (not record) then
         return libloader.log.err(("Unable to find dependency %s@%s of %s@%s"):format(depRepo, depVersion, repo, version))
       end
 
-      if (record.enabled != "1") then
+      if (record.enabled ~= "1") then
         self:enable(depRepo, depVersion)
       end
     end
