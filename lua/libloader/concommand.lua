@@ -111,7 +111,7 @@ local actions = {
       return libloader.log.err("You must specify the version of the library!")
     end
 
-    libloader:load(data.repo, version)
+    libloader:enable(data.repo, version)
   end,
 
   --- Library disabling
