@@ -24,7 +24,7 @@ All packages are searched on GitHub, in open source repositories.
 * [@autumngmod/workyaround](https://github.com/autumngmod/workyaround) - Creates a data/worky folder whose contents are passed to the client anyway, bypassing Garry's Mod's prohibitions on extensions.
 
 # Installation
-Download [latest release](https://github.com/autumngmod/libloader/releases/download/latest/libloader.lua), and put it to ``GarrymodDS/garrysmod/lua/autorun/`` (its minified version of ``libloader``)
+Download [latest release](https://github.com/autumngmod/libloader/releases/latest/download/libloader_minified.lua), and put it to ``GarrymodDS/garrysmod/lua/autorun/`` (its minified version of ``libloader``)
 
 > [!NOTE]
 > Alternatively, you can just download this repository, and install libloader as an addon. This way you can make sure that the code is not modified and does not contain anything dangerous.
