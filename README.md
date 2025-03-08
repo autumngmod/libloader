@@ -1,9 +1,22 @@
 # libloader
-``libloader`` is an attempt to make a package manager for Garry's Mod.
-
+``libloader`` is an attempt to make a package manager for Garry's Mod. \
 All packages are searched on GitHub, in open source repositories.
 
 ![showcase](./assets/showcase.png)
+
+# Table of contents
+* [Official available libraries](#official-available-libraries)
+* [Installation](#installation)
+* [Usage](#usage)
+  * [Installation](#library-installation)
+  * [Library enabling](#library-enabling)
+  * [Library disabling](#library-disabling)
+  * [Library removing](#library-removing)
+* [For developers](#for-developers)
+
+# Official available libraries
+* [@autumngmod/binloader](https://github.com/autumngmod/binloader) - Auto ``DLL`` module loader
+* [@autumngmod/workyaround](https://github.com/autumngmod/workyaround) - Creates a data/worky folder whose contents are passed to the client anyway, bypassing Garry's Mod's prohibitions on extensions.
 
 # Installation
 Download [latest release](https://github.com/autumngmod/libloader/releases/download/latest/libloader.lua), and put it to ``GarrymodDS/garrysmod/lua/autorun/`` (its minified version of ``libloader``)
@@ -11,8 +24,46 @@ Download [latest release](https://github.com/autumngmod/libloader/releases/downl
 > [!NOTE]
 > Alternatively, you can just download this repository, and install libloader as an addon. This way you can make sure that the code is not modified and does not contain anything dangerous.
 
-# For developers
-Your repository should have an addon.json file in root directory, and its contents should match [this json schema](https://raw.githubusercontent.com/autumngmod/json/refs/heads/main/addon.scheme.json).
+# Usage
+> [!NOTE]
+> You can hide tooltips (hints) by using the ``libloader_showhints 0`` command
+
+### Library installation
+```bash
+# Installation of latest version of library
+lib i/install autumngmod/binloader
+
+# Forcing a version
+lib i autumngmod/binloader@0.1.0
+# # Forcing a version with a flag
+lib i autumngmod/binloader --version 0.1.0
+```
+
+### Library enabling
+> [!NOTE]
+> Libraries are disabled by default, so enable them after installation.
+
+```bash
+lib enable autumngmod/binloader@0.1.0
+```
+
+### Library disabling
+```bash
+lib disable autumngmod/binloader@0.1.0
+```
+
+### Library removing
+```bash
+lib remove/delete/r autumngmod/binloader@0.1.0
+```
+
+### Show the list of installed libraries
+```bash
+lib list
+```
+
+# * For developers
+Your repository should have an addon.json file in GitHub release, and its contents should match [this json schema](https://raw.githubusercontent.com/autumngmod/json/refs/heads/main/addon.scheme.json).
 
 Example:
 ```json
@@ -38,43 +89,3 @@ You can do this either manually or [via GitHub Actions like gm-donate/igs](https
 > GitHub Release should have a name like “v*.*.*.*”, e.g. “v0.1.0”.
 
 [Ideal example of a repository with an addon on GitHub](https://github.com/autumngmod/binloader)
-
-# Usage
-> [!NOTE]
-> This commands should be running in the srcds console (gmod-ds)
-
-### Library installation
-```bash
-lib install autumngmod/binloader
-# or
-lib i autumngmod/binloader
-
-# with version
-lib i autumngmod/binloader@0.1.0
-# aliases
-lib i autumngmod/binloader --version 0.1.0
-lib i autumngmod/binloader --version 0.1.0 --branch master
-```
-
-### Library enabling
-```bash
-lib enable autumngmod/binloader@0.1.0
-```
-
-### Library disabling
-```bash
-lib disable autumngmod/binloader@0.1.0
-```
-
-### Library removing
-```bash
-lib remove autumngmod/binloader@0.1.0
-# aliases
-lib delete autumngmod/binloader@0.1.0
-lib r autumngmod/binloader@0.1.0
-```
-
-### Show the list of installed libraries
-```bash
-lib list
-```

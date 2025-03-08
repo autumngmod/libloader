@@ -72,7 +72,9 @@ local actions = {
       return
     end
 
-    libloader:download(data.repo, args.flags["branch"], data.version || args.flags["version"])
+    coroutine.resume(coroutine.create(function()
+      libloader:download(data.repo, data.version || args.flags["version"])
+    end))
   end,
 
   --- Library deletion
@@ -90,8 +92,9 @@ local actions = {
     end
 
     libloader.db:remove(data.repo, version)
+    libloader.fs:delete(data.repo, version)
 
-    -- file.Delete() todo
+    libloader.log:log(("Library %s@%s has been deleted"):format(data.repo, version))
   end,
 
   --- Library enabling
@@ -109,6 +112,7 @@ local actions = {
     end
 
     libloader.db:enable(data.repo, version)
+    libloader:load(data.repo, version)
   end,
 
   --- Library disabling
@@ -138,8 +142,8 @@ local actions = {
     libloader.log.log("List of installed libraries")
 
     for _, record in ipairs(libs) do
-      print(("  • %s@%s (%s)"):format(record.repo, record.version, record.enabled == "1" and "enabled" or "disabled"))
-      print(("    %s"):format(libloader.fs:getLibPath(record.repo, record.version)))
+      libloader.log.empty(("  • %s@%s (%s)"):format(record.repo, record.version, record.enabled == "1" and "enabled" or "disabled"))
+      libloader.log.empty(("    %s"):format(libloader.fs:getLibPath(record.repo, record.version)))
     end
   end
 }
@@ -150,7 +154,11 @@ actions["r"] = actions["remove"]
 actions["delete"] = actions["remove"]
 
 concommand.Add("lib", function(ply, _, args)
-  if (IsValid(ply) && !ply:IsSuperAdmin()) then
+  if (libloader:isBusy()) then
+    return
+  end
+
+  if (SERVER && IsValid(ply) && !ply:IsSuperAdmin()) then
     return ply:ChatPrint("you are not permitted to do that")
   end
 

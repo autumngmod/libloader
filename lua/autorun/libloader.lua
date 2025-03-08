@@ -3,14 +3,15 @@
 ---@field description string
 ---@field authors string[]
 ---@field version string
+---@field side string[]
 ---@field githubRepo string
 ---@field dependencies? {string: string}
 
 libloader = libloader || {}
-libloader.version = "0.1.1"
+libloader.version = "0.1.2"
 libloader.showChecksums = true
 
-local defaultBranch = "main"
+local showHints = CreateConVar("libloader_showhints", "1", nil, nil, 0, 1)
 
 if (!libloader.showChecksums) then
   libloader.log.warn("Attention! You have disabled printing of file checksums. It's not safe!")
@@ -20,14 +21,15 @@ IncludeCS("libloader/db.lua")
 IncludeCS("libloader/fs.lua")
 IncludeCS("libloader/log.lua")
 IncludeCS("libloader/concommand.lua")
+IncludeCS("libloader/client.lua")
 
 local greyColor = libloader.log.greyColor
 local orangeColor = libloader.log.orangeColor
 
 ---@param co? thread
-local function resume(co)
+local function resume(co, ...)
   if (co) then
-    coroutine.resume(co)
+    coroutine.resume(co, ...)
   end
 end
 
@@ -45,55 +47,130 @@ end
 
 local trustedOrgs = {"autumngmod", "smokingplaya"}
 
--- TODO version <<
+---@param repo string
+---@param version? string
+---@param msg string | number
+---@param co? thread
+local function handleError(repo, version, msg, co)
+  libloader.log.err(("Failed to get %s: %s"):format(repo .. (version and "@" .. version or ""), msg))
+
+  libloader:setBusy(false)
+
+  resume(co)
+end
+
+---@param repo string
+local function getLatestVersion(repo)
+  local co = coroutine.running()
+  local url = ("https://api.github.com/repos/%s/releases/latest"):format(repo)
+  local result;
+
+  http.Fetch(url, function(b, _, _, c)
+    if (c != 200) then
+      resume(co)
+
+      return libloader.log.err("Failed to fetch GitHub API")
+    end
+
+    result = util.JSONToTable(b)
+      .tag_name
+
+    libloader.log.log("Found the latest version of the library: " .. result)
+
+    resume(co)
+  end, function(e)
+    handleError(repo, nil, e, co)
+  end)
+
+  coroutine.yield()
+
+  return result
+end
+
+---@private
+---@param b boolean
+function libloader:setBusy(b)
+  self.busy = b
+end
+
+---@return boolean
+function libloader:isBusy()
+  return self.busy or false
+end
+
+---@private
+---@param list {string: string}[]
+---@param shouldEnable? boolean
+function libloader:downloadMany(list, shouldEnable)
+  for _, tab in ipairs(list) do
+    local repo = next(tab)
+    local version = tab[repo]
+
+    self:download(repo, version)
+
+    if (shouldEnable) then
+      self:load(repo, version)
+    end
+  end
+end
+
 --- Downloads library from GitHub repository
 ---
 ---@param repo string
----@param branch? string
 ---@param version? string
----@param parentCo? thread
-function libloader:download(repo, branch, version, parentCo)
-  local url = ("https://raw.githubusercontent.com/%s/refs/heads/%s/addon.json"):format(repo, branch or defaultBranch)
+function libloader:download(repo, version)
+  self:setBusy(true)
 
-  libloader.log.log(("Fetching library %s"):format(repo))
+  version = version and "v" .. version or getLatestVersion(repo)
+
+  if (!version) then
+    self:setBusy(false)
+    return self.log.err("Failed to get latest release of " .. repo)
+  end
+
+  local baseCo = coroutine.running()
+  local url = ("http://github.com/%s/releases/download/%s/addon.json"):format(repo, version)
 
   if (!table.HasValue(trustedOrgs, repo:Split("/")[1])) then
-    MsgC(greyColor, "We are not responsible for problems with third-party libraries. Be careful.")
+    MsgC(greyColor, "We are not responsible for third-party libraries. Their use may lead to harmful consequences.")
     MsgN()
   end
 
-  http.Fetch(url, function(b, s)
+  libloader.log.log(("Retrieving %s@%s library metadata"):format(repo, version))
+
+  http.Fetch(url, function(b, _, _, c)
+    if (c > 300) then
+      return handleError(repo, version, c)
+    end
+
     local co = coroutine.create(function(co)
       ---@type AddonSchema
       local body = util.JSONToTable(b)
 
-      libloader.log.log(("Found %s@%s"):format(repo, body["version"]))
+      libloader.log.custom(Color(0, 255, 0), "[200 OK] ", libloader.log.greyColor, "Metadata found")
 
       local dependencies = body.dependencies
       if (dependencies) then
         libloader.log.custom("Found ", orangeColor, "dependencies: ", greyColor, concatDeps(dependencies))
 
-        for depRepo, version in pairs(dependencies) do
-          local splitted = depRepo:Split(":"); // org/repo or org/repo:master
-          ---@type string, string?
-          local repo, branch = splitted[1], splitted[2]
-          self:download(repo, branch, version, co)
-          coroutine.yield()
+        for repo, version in pairs(dependencies) do
+          self:download(repo, version, co)
         end
       end
 
       self:handleDownload(repo, body, co)
-      coroutine.yield()
 
-      resume(parentCo)
+      self:setBusy(false)
+
+      coroutine.resume(baseCo)
     end)
 
     coroutine.resume(co, co)
-  end, function(err)
-    libloader.log.err(("Failed to fetch \"%s\": %s"):format(url, err))
-
-    resume(parentCo)
+  end, function(e)
+    handleError(repo, version, e)
   end)
+
+  coroutine.yield()
 end
 
 ---@private
@@ -130,15 +207,20 @@ function libloader:handleDownload(repo, body, co)
 
     self.log.custom(Color(85, 255, 85), ("The %s@%s library has been installed"):format(repo, version))
 
-    resume(co)
-  end, function(err)
-    self.log.err(("Failed to get lib.lua file \"%s\": %s"):format(url, err))
+    if (showHints:GetBool()) then
+      self.log.custom(self.log.orangeColor, "* Libraries are not enabled by default, use ", self.log.greyColor, "lib enable org/repo@version", self.log.orangeColor, " to enable.")
+    end
+
+    hook.Run("libInstalled", repo, version)
 
     resume(co)
+  end, function(e)
+    handleError(repo, version, e, co)
   end)
+
+  coroutine.yield()
 end
 
--- todo
 function libloader:load(repo, version)
   local path = self.fs:getLibPath(repo, version)
 
@@ -149,19 +231,10 @@ function libloader:load(repo, version)
   local err = RunString(file.Read(path, "DATA"), repo, false)
 
   if (err) then
-    self.log.err("Error when starting " .. err)
+    return self.log.err("Error while running " .. err)
   end
-end
 
--- todo
----@private
----@param repo string
----@param version string
-function libloader:remove(repo, version)
-  self.db:remove(repo, version)
-  self.fs:delete(repo, version)
-
-  self.log.log(("Library %s@%s has been deleted"):format(repo, version))
+  self.log.log(("Library %s@%s has been loaded"):format(repo, version))
 end
 
 function libloader:loadLibraries()
@@ -177,3 +250,8 @@ function libloader:loadLibraries()
 end
 
 libloader:loadLibraries()
+
+-- RunString test --
+RunString("RSTEST=0")
+assert(RSTEST == 0, "RunString not working")
+RSTEST = nil
