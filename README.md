@@ -20,6 +20,7 @@ All packages are searched on GitHub, in open source repositories.
 * [For developers](#for-developers)
 
 # Official available libraries
+* [@autumngmod/cream](https://github.com/autumngmod/cream) - Web based UI (React/Vue/etc) in Garry's Mod
 * [@autumngmod/binloader](https://github.com/autumngmod/binloader) - Auto ``DLL`` module loader
 * [@autumngmod/workyaround](https://github.com/autumngmod/workyaround) - Creates a data/worky folder whose contents are passed to the client anyway, bypassing Garry's Mod's prohibitions on extensions.
 
