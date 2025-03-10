@@ -265,7 +265,7 @@ function libloader:load(repo, version)
     return self.log.err(("The lib.txt file for %s@%s was not found. Most likely you already deleted it."):format(repo, version))
   end
 
-  if (util.CRC(self.fs.read(repo, version)) ~= self.db:getCrc(repo, version)) then
+  if (util.CRC(self.fs:read(repo, version)) ~= self.db:getCrc(repo, version)) then
     -- blud wtf u r doin'???
     return
   end

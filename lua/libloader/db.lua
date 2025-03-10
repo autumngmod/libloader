@@ -203,10 +203,16 @@ end
 ---
 ---@param repo string
 ---@param version string
+---@return string Crc
 function libloader.db:getCrc(repo, version)
   local query = ("SELECT crc FROM loaderDb WHERE repo=%s AND version=%s"):format(SQLStr(repo), SQLStr(version))
-  local result = sql.Query(query)
+  local result = sql.Query(query)[1]
 
+  if (!result) then
+    return "0"
+  end
+
+  return result.crc
 end
 
 --- Is database contains library record?
