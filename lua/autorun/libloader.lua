@@ -7,8 +7,9 @@
 ---@field githubRepo string
 ---@field dependencies? {string: string}
 
+---@diagnostic disable-next-line: lowercase-global
 libloader = libloader or {}
-libloader.version = "0.1.3"
+libloader.version = "0.1.4"
 libloader.showChecksums = true
 
 local showHints = CreateConVar("libloader_showhints", "1", nil, nil, 0, 1)
@@ -59,6 +60,8 @@ local function handleError(repo, version, msg, co)
   resume(co)
 end
 
+--- Fetches the GitHub API and gets the latest release of the library
+---
 ---@param repo string
 local function getLatestVersion(repo)
   local co = coroutine.running()
@@ -93,11 +96,14 @@ function libloader:setBusy(b)
   self.busy = b
 end
 
+--- Is libloader busy?
 ---@return boolean
 function libloader:isBusy()
   return self.busy or false
 end
 
+--- Downloads a bunch of libraries
+---
 ---@private
 ---@param list {string: string}[]
 ---@param shouldEnable? boolean
@@ -128,7 +134,7 @@ function libloader:download(repo, argVersion)
     return self.log.err("Failed to get latest release of " .. repo)
   end
 
-  // skip if downloaded
+  -- skip if downloaded
   local vers = version:Replace("v", "")
   local result = self.db:get(repo, vers)
   local downloaded = istable(result) and result[1]
@@ -140,7 +146,7 @@ function libloader:download(repo, argVersion)
     end
   end
 
-  // downloading
+  -- downloading
 
   local baseCo = coroutine.running()
   local url = ("http://github.com/%s/releases/download/%s/addon.json"):format(repo, version)
@@ -187,6 +193,8 @@ function libloader:download(repo, argVersion)
   coroutine.yield()
 end
 
+--- Fetches lib.lua file and saves it
+---
 ---@private
 ---@param repo string
 ---@param body AddonSchema
@@ -237,16 +245,29 @@ function libloader:handleDownload(repo, body, co)
   coroutine.yield()
 end
 
+--- Enables library
+---
+---@param repo string
+---@param version string
 function libloader:enable(repo, version)
   self.db:enable(repo, version)
   self:load(repo, version)
 end
 
+--- Loads library via RunString
+---
+---@param repo string
+---@param version string
 function libloader:load(repo, version)
   local path = self.fs:getLibPath(repo, version)
 
   if (not file.Exists(path, "DATA")) then
     return self.log.err(("The lib.txt file for %s@%s was not found. Most likely you already deleted it."):format(repo, version))
+  end
+
+  if (util.CRC(self.fs.read(repo, version)) ~= self.db:getCrc(repo, version)) then
+    -- blud wtf u r doin'???
+    return
   end
 
   local err = RunString(file.Read(path, "DATA"), repo, false)
@@ -258,6 +279,9 @@ function libloader:load(repo, version)
   self.log.log(("Library %s@%s has been loaded"):format(repo, version))
 end
 
+--- Loads enabled in database libraries
+---
+---@private
 function libloader:loadLibraries()
   local libraries = self.db:getInstalled()
 

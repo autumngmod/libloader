@@ -35,9 +35,22 @@ if (SERVER) then
     sendCachedLibraries(client)
   end)
 
-  // if you put everything in one file, then return can break everything here.
+  -- if you put everything in one file, then return can break everything here.
   -- return
 else
+  --- Disables all client's installed libraries
+  ---
+  ---@private
+  function libloader:disableLibraries()
+    local installed = self.db:getInstalled()
+
+    for _, lib in ipairs(installed) do
+      if (lib.enabled == "1") then
+        self.db:disable(lib.repo, lib.version)
+      end
+    end
+  end
+
   net.Receive("lib.load", function(len)
     if (libloader:isBusy()) then
       return -- idi nahui lol
@@ -47,9 +60,11 @@ else
     local size = net.ReadUInt(16)
 
     for i=1, size do
-      //        org/repo            = version
+      --        org/repo            = version
       list[i] = {[net.ReadString()] = net.ReadString()}
     end
+
+    libloader:disableLibraries()
 
     local co = coroutine.create(function()
       libloader:downloadMany(list, true)
