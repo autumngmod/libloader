@@ -3,7 +3,7 @@
   "name": "libloader",
   "description": "Package manager for Garry's Mod",
   "authors": ["smokingplaya"],
-  "version": "0.1.4",
+  "version": "0.1.5",
   "githubRepo": "https://github.com/autumngmod/libloader",
   "side": ["server", "client"]
 }

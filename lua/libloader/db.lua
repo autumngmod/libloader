@@ -77,9 +77,10 @@ end
 ---
 ---@param repo string
 ---@param body AddonSchema
----@param crc number
+---@param crc string
 function libloader.db:save(repo, body, crc)
   if (self:has(repo, body.version)) then
+    self:remove(repo, body.version)
     return
   end
 
@@ -106,7 +107,7 @@ end
 ---@param version string
 function libloader.db:enable(repo, version)
   if (not self:has(repo, version)) then
-    return libloader.log.err(("Library %s/%s was not found!"):format(repo, version))
+    return libloader.log.err(("Library %s@%s was not found!"):format(repo, version))
   end
 
   local query = ("SELECT mode, deps FROM loaderDb WHERE repo=%s AND version=%s"):format(SQLStr(repo), SQLStr(version))
@@ -208,7 +209,7 @@ function libloader.db:getCrc(repo, version)
   local query = ("SELECT crc FROM loaderDb WHERE repo=%s AND version=%s"):format(SQLStr(repo), SQLStr(version))
   local result = sql.Query(query)[1]
 
-  if (!result) then
+  if (not result) then
     return "0"
   end
 

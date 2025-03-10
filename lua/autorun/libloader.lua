@@ -9,7 +9,7 @@
 
 ---@diagnostic disable-next-line: lowercase-global
 libloader = libloader or {}
-libloader.version = "0.1.4"
+libloader.version = "0.1.5"
 libloader.showChecksums = true
 
 local showHints = CreateConVar("libloader_showhints", "1", nil, nil, 0, 1)
@@ -140,7 +140,7 @@ function libloader:download(repo, argVersion)
   local downloaded = istable(result) and result[1]
 
   if (downloaded) then
-    if (downloaded.crc == util.CRC(self.fs:read(repo, vers))) then
+    if (downloaded.crc == util.CRC(self.fs:read(repo, vers) or "")) then
       self:setBusy(false)
       return self.log.warn(("%s@%s is already installed"):format(repo, vers))
     end
@@ -266,11 +266,10 @@ function libloader:load(repo, version)
   end
 
   if (util.CRC(self.fs:read(repo, version)) ~= self.db:getCrc(repo, version)) then
-    -- blud wtf u r doin'???
     return
   end
 
-  local err = RunString(file.Read(path, "DATA"), repo, false)
+  local err = RunString(file.Read(path, "DATA"), repo .. "@" .. version, false)
 
   if (err) then
     return self.log.err("Error while running " .. err)
