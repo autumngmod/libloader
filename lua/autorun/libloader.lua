@@ -9,7 +9,7 @@
 
 ---@diagnostic disable-next-line: lowercase-global
 libloader = libloader or {}
-libloader.version = "0.1.5"
+libloader.version = "0.1.6"
 libloader.showChecksums = true
 
 local showHints = CreateConVar("libloader_showhints", "1", nil, nil, 0, 1)
@@ -45,8 +45,6 @@ local function concatDeps(deps)
 
   return result:Left(#result-2)
 end
-
-local trustedOrgs = {"autumngmod", "smokingplaya"}
 
 ---@param repo string
 ---@param version? string
@@ -120,6 +118,8 @@ function libloader:downloadMany(list, shouldEnable)
   end
 end
 
+local trustedOrgs = {"autumngmod", "smokingplaya"}
+
 --- Downloads library from GitHub repository
 ---
 ---@param repo string
@@ -178,7 +178,12 @@ function libloader:download(repo, argVersion)
         end
       end
 
-      self:handleDownload(repo, body, co)
+      -- skip downloading if the library is client-only
+      if (CLIENT or SERVER and (#body.side == 2 or body[1] == "server")) then
+        self:handleDownload(repo, body, co)
+      else
+        self:install(repo, body)
+      end
 
       self:setBusy(false)
 
@@ -226,16 +231,7 @@ function libloader:handleDownload(repo, body, co)
       ))
     end
 
-    self.fs:write(repo, version, content)
-    self.db:save(repo, body, crc)
-
-    self.log.custom(Color(85, 255, 85), ("The %s@%s library has been installed"):format(repo, version))
-
-    if (showHints:GetBool()) then
-      self.log.custom(self.log.orangeColor, "* Libraries are not enabled by default, use ", self.log.greyColor, ("lib enable %s@%s"):format(repo, body.version), self.log.orangeColor, " to enable.")
-    end
-
-    hook.Run("libInstalled", repo, version)
+    self:install(repo, body, content, crc)
 
     resume(co)
   end, function(e)
@@ -243,6 +239,30 @@ function libloader:handleDownload(repo, body, co)
   end)
 
   coroutine.yield()
+end
+
+---@private
+---@param repo string
+---@param body AddonSchema
+---@param content string?
+---@param crc string?
+function libloader:install(repo, body, content, crc)
+  local version = body.version
+
+  if (content) then
+    self.fs:write(repo, version, content)
+  end
+
+  self.db:save(repo, body, crc or "0")
+
+  self.log.custom(Color(85, 255, 85), ("The %s@%s library has been installed"):format(repo, version))
+
+  if (showHints:GetBool()) then
+    self.log.custom(self.log.orangeColor, "* The library is disabled after installation, you can enable it with this command:")
+    self.log.custom(self.log.greyColor, ("\tlib enable %s@%s"):format(repo, version))
+  end
+
+  hook.Run("LibLoader.Installed", repo, version)
 end
 
 --- Enables library
@@ -259,6 +279,14 @@ end
 ---@param repo string
 ---@param version string
 function libloader:load(repo, version)
+  local result = self.db:get(repo, version)
+  local row = istable(result) and result[1]
+
+  -- client-only
+  if (not row or (SERVER and row.mode == "1")) then
+    return
+  end
+
   local path = self.fs:getLibPath(repo, version)
 
   if (not file.Exists(path, "DATA")) then
@@ -274,6 +302,8 @@ function libloader:load(repo, version)
   if (err) then
     return self.log.err("Error while running " .. err)
   end
+
+  hook.Run("LibLoader.Loaded", repo, version)
 
   self.log.log(("Library %s@%s has been loaded"):format(repo, version))
 end
@@ -297,5 +327,5 @@ libloader:loadLibraries()
 
 -- RunString test --
 RunString("RSTEST=0")
-assert(RSTEST == 0, "RunString not working")
+assert(RSTEST == 0, "RunString isn't working")
 RSTEST = nil

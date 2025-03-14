@@ -20,9 +20,10 @@ All packages are searched on GitHub, in open source repositories.
 * [For developers](#for-developers)
 
 # Official available libraries
-* [@autumngmod/cream](https://github.com/autumngmod/cream) - Web based UI (React/Vue/etc) in Garry's Mod
-* [@autumngmod/binloader](https://github.com/autumngmod/binloader) - Auto ``DLL`` module loader
-* [@autumngmod/workyaround](https://github.com/autumngmod/workyaround) - Creates a data/worky folder whose contents are passed to the client anyway, bypassing Garry's Mod's prohibitions on extensions.
+* [autumngmod/cream](https://github.com/autumngmod/cream) - Web based UI (React/Vue/etc) in Garry's Mod
+* [autumngmod/logmo](https://github.com/autumngmod/logmo) - Small logger utility library
+* [autumngmod/binloader](https://github.com/autumngmod/binloader) - Auto ``DLL`` module loader
+* [autumngmod/workyaround](https://github.com/autumngmod/workyaround) - Creates a data/worky folder whose contents are passed to the client anyway, bypassing Garry's Mod's prohibitions on extensions.
 
 # Installation
 Download [latest release](https://github.com/autumngmod/libloader/releases/latest/download/libloader_minified.lua), and put it to ``GarrymodDS/garrysmod/lua/autorun/`` (its minified version of ``libloader``)
@@ -40,9 +41,9 @@ Download [latest release](https://github.com/autumngmod/libloader/releases/lates
 lib i/install autumngmod/binloader
 
 # Forcing a version
-lib i autumngmod/binloader@0.1.0
+lib install autumngmod/binloader@0.1.0
 # # Forcing a version with a flag
-lib i autumngmod/binloader --version 0.1.0
+lib install autumngmod/binloader --version 0.1.0
 ```
 
 ### Library enabling
@@ -50,7 +51,7 @@ lib i autumngmod/binloader --version 0.1.0
 > Libraries are disabled by default, so enable them after installation.
 
 ```bash
-lib enable autumngmod/binloader@0.1.0
+lib en/enable autumngmod/binloader@0.1.0
 ```
 
 ### Library disabling
@@ -68,7 +69,7 @@ lib remove/delete/r autumngmod/binloader@0.1.0
 lib list
 ```
 
-# * For developers
+# For developers
 Your repository should have an addon.json file in GitHub release, and its contents should match [this json schema](https://raw.githubusercontent.com/autumngmod/json/refs/heads/main/addon.scheme.json).
 
 Example:

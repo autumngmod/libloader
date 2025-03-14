@@ -81,7 +81,6 @@ end
 function libloader.db:save(repo, body, crc)
   if (self:has(repo, body.version)) then
     self:remove(repo, body.version)
-    return
   end
 
   -- saving deps
@@ -193,7 +192,7 @@ end
 ---
 ---@param repo string
 ---@param version string
----@return DbRecord
+---@return DbRecord[]
 function libloader.db:get(repo, version)
   local query = ("SELECT * FROM loaderDb WHERE repo=%s AND version=%s"):format(SQLStr(repo), SQLStr(version))
 

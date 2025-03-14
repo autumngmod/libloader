@@ -62,6 +62,8 @@ local function parseRepo(str)
   }
 end
 
+-- Console commands
+
 local actions = {
   --- Library installation
   ---@param args CliArguments
@@ -155,6 +157,7 @@ local actions = {
 
 -- aliases
 actions["i"] = actions["install"]
+actions["en"] = actions["enable"]
 actions["r"] = actions["remove"]
 actions["delete"] = actions["remove"]
 
@@ -163,7 +166,7 @@ concommand.Add("lib", function(ply, _, args)
     return
   end
 
-  if (SERVER and IsValid(ply) and not ply:IsSuperAdmin()) then
+  if (IsValid(ply) and not ply:IsSuperAdmin()) then
     return ply:ChatPrint("you are not permitted to do that")
   end
 
